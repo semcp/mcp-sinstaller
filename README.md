@@ -25,6 +25,14 @@ Add the following to your VS code settings:
 
 1. **uvx**
 
+First, clone the repository:
+
+```bash
+git clone https://github.com/semcp/mcp-sinstaller.git
+```
+
+Then, add the following to your VS Code settings:
+
 ```json
 "mcp-sinstaller": {
     "type": "stdio",
