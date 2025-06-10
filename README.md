@@ -2,6 +2,10 @@
 
 This project provides an **MCP server installer** that can automatically install, and containerize other MCP servers from GitHub repositories. It uses the Model Context Protocol (MCP) sampling feature to analyze repositories and create appropriate docker images.
 
+
+https://github.com/user-attachments/assets/6ad17a8b-c88f-4cba-abea-3a1f5288ed3c
+
+
 ## Requirements
 
 - Docker
