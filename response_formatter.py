@@ -7,20 +7,61 @@ class ResponseFormatter:
     @staticmethod
     def format_install_success(result: Dict[str, Any]) -> List[types.TextContent]:
         """Format successful installation result."""
+        server_name = result['server_name']
+        image_name = result['image_name']
+        required_secrets = result.get('required_secrets', [])
+        ports = result.get('ports', [])
+        
+        config_name = server_name.replace('-', '_')
+        
+        docker_args = ["run", "-i", "--rm"]
+        
+        env_config = ""
+        env_instructions = ""
+        if required_secrets:
+            env_config = f',\n        "env": {{\n'
+            env_entries = []
+            for secret in required_secrets:
+                env_entries.append(f'            "{secret}": "${{input:{secret.lower().replace("_", "-")}}}"')
+            env_config += ',\n'.join(env_entries)
+            env_config += '\n        }'
+            
+            env_instructions = f"\n\n**ENVIRONMENT VARIABLES SETUP:**\n"
+            env_instructions += f"This server requires the following secrets. VS Code/Cursor will prompt you for these:\n"
+            for secret in required_secrets:
+                env_instructions += f"- {secret}\n"
+        
+        mcp_config = f'''"servers": {{
+    "{config_name}": {{
+        "type": "stdio",
+        "command": "docker",
+        "args": {docker_args + [image_name]}{env_config}
+    }}
+}}'''
+        
+        setup_instructions = f"""**MCP Server '{server_name}' is ready!**
+
+** IMPORTANT:**
+
+This is not the final step. To run the server, you still need to add the server to MCP client's MCP settings. Please display the following JSON configuration to the user.
+
+VS Code: Add to `.vscode/settings.json` under `"mcp"`:
+```json
+{mcp_config}
+```{env_instructions}
+
+**SERVER DETAILS:**
+- Repository: {result['url']}
+- Docker Image: {image_name}
+- Build Status: {result['dockerfile_status']}
+- Transport: STDIO (recommended for MCP)"""
+        
+        if ports:
+            setup_instructions += f"\n- Exposed Ports: {', '.join(map(str, ports))}"
+        
         return [types.TextContent(
             type="text",
-            text=f"Successfully built Docker image for MCP server '{result['server_name']}'!\n\n" +
-                  f"Repository: {result['url']}\n" +
-                  f"Location: {result['server_dir']}\n\n" +
-                  f"DOCKER IMAGE:\n" +
-                  f"- {result['dockerfile_status']}\n" +
-                  f"- Image: {result['image_name']}\n" +
-                  f"- Size & Created: {result['image_info']}\n" +
-                  f"- Ports: {result['ports']}\n" +
-                  f"- Environment Variables: {result['environment_variables']}\n" +
-                  f"- Required Secrets: {result['required_secrets']}\n" +
-                  f"- Metadata: {result['metadata_path']}\n\n" +
-                  f"{result['run_instructions']}"
+            text=setup_instructions
         )]
 
     @staticmethod
